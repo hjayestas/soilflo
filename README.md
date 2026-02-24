@@ -10,7 +10,7 @@ SoilFLO Interview takehome
 ## Endpoints
 
 GET `/api/v1/tickets` parameters `name`, `startDate`, `endDate`, `page`, `pageSize`
-POST `/api/v1/tickets` body `tickerNumber`, `name`, `license`, `material`
+POST `/api/v1/tickets` body `tickerNumber`, `name`, `license`, `material`, `dispatchedTime`
 
 ## Next steps
-- Add unit and postman tests
+- Add unit, integration and postman tests: I wanted to add a couple tests to cover for at least the happy path on each type to help validate.

@@ -5,8 +5,9 @@ import { initTruckModel, createTrucks, Truck } from './models/Truck';
 import { initTicketModel, fetchTickets, TicketCreationAttributes, createTickets } from './models/Ticket';
 import fs from "fs";
 
-const app: Application = express();
+export const app: Application = express();
 const PORT = process.env.PORT || 3000;
+const SUPPORTED_MATERIALS = ["Soil"];
 
 (async () => {
   await connectWithRetry();
@@ -26,29 +27,53 @@ app.post('/api/v1/tickets', async (req: Request, res: Response) => {
 
     let cleanedTickets: TicketCreationAttributes[] = [];
 
-    tickets.forEach((ticket: any) => {
-      if (!ticket.material || ticket.material != "Soil") {
-        return res.status(409).json({ error: "Material not allowed" });
-      }
+    const errors: any[] = [];
 
-      if (ticket.dispatchedTime && !dispatchedTimes.has(`${ticket.license}-${ticket.dispatchedTime}`)){
-        const key = `${ticket.license}-${ticket.dispatchedTime}`;
-        dispatchedTimes.add(key);
-        cleanedTickets.push(ticket);
-      } else {
-        return res.status(409).json({ error: "Dispatched time conflict for this truck" });
-      }
+    tickets.forEach((ticket: any) => {
+
+    const ticketErrors: object[] = [];
+
+    if (!ticket.license) ticketErrors.push({status: 400, message: "Missing truck license"});
+    if (!ticket.name) ticketErrors.push({status: 400, message: "Missing site name"});
+    if (!ticket.material) ticketErrors.push({status: 400, message: "Missing material"});
+
+    const dispatchedDate = new Date(ticket.dispatchedTime);
+    if (!ticket.dispatchedTime || isNaN(dispatchedDate.getTime())) {
+      ticketErrors.push({status: 400, message: "Invalid dispatched time"});
+    } else if (dispatchedDate.getTime() > Date.now()) {
+      ticketErrors.push({status: 403, message: "Future dispatched time is not allowed"});
+    }
+
+    if (!SUPPORTED_MATERIALS.includes(ticket.material)) {
+      ticketErrors.push({status: 409, message: "Material not allowed"});
+    }
+
+    const key = `${ticket.license}-${dispatchedDate.toISOString()}`;
+    if (dispatchedTimes.has(key)) {
+      ticketErrors.push({status: 409, message: "Dispatched time conflict for this truck"});
+    }
+
+    if (ticketErrors.length > 0) {
+      errors.push({ ticket, errors: ticketErrors });
+    } else {
+      dispatchedTimes.add(key);
+      cleanedTickets.push(ticket);
+    }
     });
 
-    console.log("Cleaned Tickets:", cleanedTickets);
-    if(cleanedTickets.length === 0) {
-      return res.status(400).json({ error: "No valid tickets to create" });
+    if (errors.length > 0) {
+      return res.status(409).json({ errors });
     }
-    await createTickets(cleanedTickets);
 
-    return res.status(200).json({ message: "Tickets created" });
+    await createTickets(cleanedTickets);
+    return res.status(201).json({ message: "Tickets created successfully" });
+
+
   } catch (error: any) {
-    return res.status(error.status || 500).json({ error: error.message || "Failed to create tickets" });
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ error: "Truck already dispatched at this time" });
+    }
+    return res.status(error.message || 500).json({ error: error.message || "Failed to create tickets" });
   }
 });
 
@@ -58,6 +83,15 @@ app.get('/api/v1/tickets', async (req: Request, res: Response) => {
     const { name, startDate, endDate, page, pageSize } = req.query;
     const cleanStartDate = startDate ? new Date(startDate as string) : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default to 24 hours ago
     const cleanEndDate = endDate ? new Date(endDate as string) : new Date();
+
+    if (!name) {
+      return res.status(400).json({ error: "Site name is required" });
+    }
+
+    if (cleanStartDate > cleanEndDate) {
+      return res.status(400).json({ error: "Start date must be before end date" });
+    }
+    
     if (isNaN(cleanStartDate.getTime()) || isNaN(cleanEndDate.getTime())) {
       return res.status(400).json({ error: "Invalid date format" });
     }
@@ -72,7 +106,7 @@ app.get('/api/v1/tickets', async (req: Request, res: Response) => {
 
     return res.json(tickets);
   } catch (error: any) {
-    return res.status(error.status || 500).json({ error: "Failed to fetch tickets" });
+    return res.status(error.message || 500).json({ error: "Failed to fetch tickets" });
   }
 });
 
