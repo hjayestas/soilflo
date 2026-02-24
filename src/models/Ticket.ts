@@ -75,15 +75,16 @@ export async function createTickets(tickets: Tickets[]) {
         const truckLicenses = tickets.map(t => t.license);
         const siteNames = tickets.map(t => t.name);
 
-        const trucks = await Truck.findAll({
-            where: { license: truckLicenses },
-            transaction,
-        });
-
-        const sites = await Site.findAll({
-            where: { name: siteNames },
-            transaction,
-        });
+        const [trucks, sites] = await Promise.all([
+            Truck.findAll({
+                where: {license: truckLicenses},
+                transaction,
+            }),
+            Site.findAll({
+                where: { name: siteNames },
+                transaction,
+            })
+        ]);
 
         const ticketsToCreate = [];
 

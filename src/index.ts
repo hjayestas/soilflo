@@ -36,6 +36,7 @@ app.post('/api/v1/tickets', async (req: Request, res: Response) => {
     if (!ticket.license) ticketErrors.push({status: 400, message: "Missing truck license"});
     if (!ticket.name) ticketErrors.push({status: 400, message: "Missing site name"});
     if (!ticket.material) ticketErrors.push({status: 400, message: "Missing material"});
+    if (!ticket.dispatchedTime) ticketErrors.push({status: 400, message: "Missing dispatched time"});
 
     const dispatchedDate = new Date(ticket.dispatchedTime);
     if (!ticket.dispatchedTime || isNaN(dispatchedDate.getTime())) {
