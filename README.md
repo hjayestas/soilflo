@@ -12,7 +12,7 @@ SoilFLO Interview takehome
 - GET `/api/v1/tickets` parameters `name`, `startDate`, `endDate`, `page`, `pageSize`
 
 Example:
-- URL: http://localhost:3000/api/v1/tickets?startDate=Tue Feb 23 2026 04:59:49 GMT+0000&endDate=Wed Feb 24 2026 04:59:49 GMT+0000&name=APPLIDECK
+- URL: http://localhost:3000/api/v1/tickets?startDate=2026-02-23T04:59:49Z&endDate=2026-02-24T04:59:49Z&name=APPLIDECK
 
 ---------
 
