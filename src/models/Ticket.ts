@@ -12,11 +12,11 @@ interface Tickets {
   dispatchedTime: Date;
 }
 
-type TicketCreationAttributes = Tickets;
+export type TicketCreationAttributes = Tickets;
 
-class Ticket extends Model<Tickets, TicketCreationAttributes> {
+export class Ticket extends Model<Tickets, TicketCreationAttributes> {
   declare id: number;
-  declare tickerNumber: number;
+  declare ticketNumber: number;
   declare name: string;
   declare license: string;
   declare material: string;
@@ -51,7 +51,7 @@ export const initTicketModel = () => {
             },
             dispatchedTime: {
                 type: DataTypes.DATE,
-                allowNull: false,
+                allowNull: true,
             },
         },
         {
@@ -60,7 +60,7 @@ export const initTicketModel = () => {
             indexes: [
                 {
                     unique: true,
-                    fields: ['license', 'dispachedTime'],
+                    fields: ['license', 'dispatchedTime'],
                 },
             ]
         });

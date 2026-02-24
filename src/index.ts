@@ -2,7 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import { connectWithRetry, sequelize } from "./database";
 import { initSiteModel, createSites, Site } from './models/Site';
 import { initTruckModel, createTrucks, Truck } from './models/Truck';
-import { initTicketModel, createTickets, fetchTickets, Ticket } from './models/Ticket';
+import { initTicketModel, fetchTickets, TicketCreationAttributes, createTickets } from './models/Ticket';
 import fs from "fs";
 
 const app: Application = express();
@@ -22,28 +22,33 @@ app.post('/api/v1/tickets', async (req: Request, res: Response) => {
       return res.status(400).json({ error: "No tickets provided" });
     }
 
-    let dispatchedTimes = new Set<string>;
+    let dispatchedTimes = new Set<string>();
 
-    let cleanedTickets: Ticket[] = [];
+    let cleanedTickets: TicketCreationAttributes[] = [];
 
     tickets.forEach((ticket: any) => {
-      if (ticket.material && ticket.material != "Soil") {
-        res.status(409).json({ error: "Material not allowed" });
+      if (!ticket.material || ticket.material != "Soil") {
+        return res.status(409).json({ error: "Material not allowed" });
       }
+
       if (ticket.dispatchedTime && !dispatchedTimes.has(`${ticket.license}-${ticket.dispatchedTime}`)){
         const key = `${ticket.license}-${ticket.dispatchedTime}`;
         dispatchedTimes.add(key);
         cleanedTickets.push(ticket);
       } else {
-        res.status(409).json({ error: "Dispatched time conflict for this truck" });
+        return res.status(409).json({ error: "Dispatched time conflict for this truck" });
       }
     });
 
+    console.log("Cleaned Tickets:", cleanedTickets);
+    if(cleanedTickets.length === 0) {
+      return res.status(400).json({ error: "No valid tickets to create" });
+    }
     await createTickets(cleanedTickets);
 
-    res.status(200).json({ message: "Tickets created" });
+    return res.status(200).json({ message: "Tickets created" });
   } catch (error: any) {
-    res.status(error.status || 500).json({ error: error.message || "Failed to create tickets" });
+    return res.status(error.status || 500).json({ error: error.message || "Failed to create tickets" });
   }
 });
 
@@ -65,9 +70,9 @@ app.get('/api/v1/tickets', async (req: Request, res: Response) => {
       parseInt(pageSize as string) || 50
     );
 
-    res.json(tickets);
+    return res.json(tickets);
   } catch (error: any) {
-    res.status(error.status || 500).json({ error: "Failed to fetch tickets" });
+    return res.status(error.status || 500).json({ error: "Failed to fetch tickets" });
   }
 });
 
