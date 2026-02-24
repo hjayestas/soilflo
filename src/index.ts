@@ -2,7 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import { connectWithRetry, sequelize } from "./database";
 import { initSiteModel, createSites, Site } from './models/Site';
 import { initTruckModel, createTrucks, Truck } from './models/Truck';
-import { initTicketModel, createTickets, fetchTickets } from './models/Ticket';
+import { initTicketModel, createTickets, fetchTickets, Ticket } from './models/Ticket';
 import fs from "fs";
 
 const app: Application = express();
@@ -22,21 +22,24 @@ app.post('/api/v1/tickets', async (req: Request, res: Response) => {
       return res.status(400).json({ error: "No tickets provided" });
     }
 
-    let dispachedTimes = new Set<string>;
+    let dispatchedTimes = new Set<string>;
+
+    let cleanedTickets: Ticket[] = [];
 
     tickets.forEach((ticket: any) => {
       if (ticket.material && ticket.material != "Soil") {
         res.status(409).json({ error: "Material not allowed" });
       }
-      if (ticket.dispachedTime && !dispachedTimes.has(ticket.dispachedTime)){
-        const key = `${ticket.license}-${ticket.dispachedTime}`;
-        dispachedTimes.add(key);
+      if (ticket.dispatchedTime && !dispatchedTimes.has(`${ticket.license}-${ticket.dispatchedTime}`)){
+        const key = `${ticket.license}-${ticket.dispatchedTime}`;
+        dispatchedTimes.add(key);
+        cleanedTickets.push(ticket);
       } else {
-        res.status(409).json({ error: "Dispached time conflict for this truck" });
+        res.status(409).json({ error: "Dispatched time conflict for this truck" });
       }
     });
 
-    await createTickets(tickets);
+    await createTickets(cleanedTickets);
 
     res.status(200).json({ message: "Tickets created" });
   } catch (error: any) {

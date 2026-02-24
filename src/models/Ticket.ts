@@ -9,7 +9,7 @@ interface Tickets {
   license: string;
   material: string;
   ticketNumber: number;
-  dispachedTime: Date;
+  dispatchedTime: Date;
 }
 
 type TicketCreationAttributes = Tickets;
@@ -20,7 +20,7 @@ class Ticket extends Model<Tickets, TicketCreationAttributes> {
   declare name: string;
   declare license: string;
   declare material: string;
-  declare dispachedTime: Date;
+  declare dispatchedTime: Date;
 
   declare createdAt: Date;
   declare updatedAt: Date;
@@ -49,7 +49,7 @@ export const initTicketModel = () => {
                 type: DataTypes.INTEGER,
                 allowNull: false,
             },
-            dispachedTime: {
+            dispatchedTime: {
                 type: DataTypes.DATE,
                 allowNull: false,
             },
@@ -141,15 +141,7 @@ export async function fetchTickets(siteName: string, fromDate: Date, toDate: Dat
             order: [["createdAt", "DESC"]],
         });
 
-        return {
-            data: rows,
-            pagination: {
-                total: count,
-                page,
-                pageSize,
-                totalPages: Math.ceil(count / pageSize),
-            },
-        };
+        return rows;
     } catch (error) {
         console.error("Error fetching tickets:", error);
         throw error;
