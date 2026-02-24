@@ -42,6 +42,11 @@ export const initSiteModel = () => {
         {
             sequelize,
             tableName: 'sites',
+            indexes: [
+                {
+                    fields: ['name'],
+                },
+            ],
         });
     
     return Site;

@@ -36,6 +36,12 @@ export const initTruckModel = () => {
         {
             sequelize,
             tableName: 'trucks',
+            indexes: [
+                {
+                    unique: true,
+                    fields: ['license'],
+                },
+            ],
         });
 
     return Truck;

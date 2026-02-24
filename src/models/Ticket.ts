@@ -63,15 +63,26 @@ export async function createTickets(tickets: Tickets[]) {
         const truckLicenses = tickets.map(t => t.license);
         const siteNames = tickets.map(t => t.name);
 
-        const trucks = await Truck.findAll({
-            where: { license: truckLicenses },
-            transaction,
-        });
+        const [trucks, sites] = await Promise.all([
+            Truck.findAll({
+                where: { license: truckLicenses },
+                transaction,
+            }),
+            Site.findAll({
+                where: { name: siteNames },
+                transaction,
+            }),
+        ]);
 
-        const sites = await Site.findAll({
-            where: { name: siteNames },
-            transaction,
-        });
+        const truckMap = trucks.reduce((map: Record<string, typeof trucks[0]>, truck) => {
+            map[truck.license] = truck;
+            return map;
+        }, {});
+
+        const siteMap = sites.reduce((map: Record<string, typeof sites[0]>, site) => {
+            map[site.name] = site;
+            return map;
+        }, {});
 
         const ticketsToCreate = [];
 
@@ -140,16 +151,6 @@ export async function fetchTickets(siteName: string, fromDate: Date, toDate: Dat
         };
     } catch (error) {
         console.error("Error fetching tickets:", error);
-        throw error;
-    }
-}
-
-export async function fetchAllTickets() {
-    try {
-        const tickets = await Ticket.findAll();
-        return tickets;
-    } catch (error) {
-        console.error('Error fetching tickets:', error);
         throw error;
     }
 }
