@@ -24,7 +24,7 @@ app.post('/api/v1/tickets', async (req: Request, res: Response) => {
 
     tickets.forEach((ticket: any) => {
       if (ticket.material && ticket.material != "Soil") {
-        ticket.material = "Soil";
+        res.status(400).json({ error: "Material not allowed" });
       }
     });
 

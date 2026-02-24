@@ -63,26 +63,15 @@ export async function createTickets(tickets: Tickets[]) {
         const truckLicenses = tickets.map(t => t.license);
         const siteNames = tickets.map(t => t.name);
 
-        const [trucks, sites] = await Promise.all([
-            Truck.findAll({
-                where: { license: truckLicenses },
-                transaction,
-            }),
-            Site.findAll({
-                where: { name: siteNames },
-                transaction,
-            }),
-        ]);
+        const trucks = await Truck.findAll({
+            where: { license: truckLicenses },
+            transaction,
+        });
 
-        const truckMap = trucks.reduce((map: Record<string, typeof trucks[0]>, truck) => {
-            map[truck.license] = truck;
-            return map;
-        }, {});
-
-        const siteMap = sites.reduce((map: Record<string, typeof sites[0]>, site) => {
-            map[site.name] = site;
-            return map;
-        }, {});
+        const sites = await Site.findAll({
+            where: { name: siteNames },
+            transaction,
+        });
 
         const ticketsToCreate = [];
 
