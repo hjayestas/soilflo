@@ -9,6 +9,7 @@ interface Tickets {
   license: string;
   material: string;
   ticketNumber: number;
+  dispachedTime: Date;
 }
 
 type TicketCreationAttributes = Tickets;
@@ -19,6 +20,7 @@ class Ticket extends Model<Tickets, TicketCreationAttributes> {
   declare name: string;
   declare license: string;
   declare material: string;
+  declare dispachedTime: Date;
 
   declare createdAt: Date;
   declare updatedAt: Date;
@@ -47,10 +49,20 @@ export const initTicketModel = () => {
                 type: DataTypes.INTEGER,
                 allowNull: false,
             },
+            dispachedTime: {
+                type: DataTypes.DATE,
+                allowNull: false,
+            },
         },
         {
             sequelize,
             tableName: 'tickets',
+            indexes: [
+                {
+                    unique: true,
+                    fields: ['license', 'dispachedTime'],
+                },
+            ]
         });
 
     return Ticket;

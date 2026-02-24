@@ -22,9 +22,17 @@ app.post('/api/v1/tickets', async (req: Request, res: Response) => {
       return res.status(400).json({ error: "No tickets provided" });
     }
 
+    let dispachedTimes = new Set<string>;
+
     tickets.forEach((ticket: any) => {
       if (ticket.material && ticket.material != "Soil") {
-        res.status(400).json({ error: "Material not allowed" });
+        res.status(409).json({ error: "Material not allowed" });
+      }
+      if (ticket.dispachedTime && !dispachedTimes.has(ticket.dispachedTime)){
+        const key = `${ticket.license}-${ticket.dispachedTime}`;
+        dispachedTimes.add(key);
+      } else {
+        res.status(409).json({ error: "Dispached time conflict for this truck" });
       }
     });
 
